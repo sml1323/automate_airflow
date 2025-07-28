@@ -35,9 +35,19 @@ else
     echo "  ⚠️ files 폴더를 찾을 수 없습니다"
 fi
 
-# .env 파일 생성
+# .env 파일 생성/수정
 echo "⚙️ 환경변수 설정 중..."
-echo -e "AIRFLOW_UID=$(id -u)" > .env
+if [ -f .env ]; then
+    # 기존 .env 파일이 있으면 AIRFLOW_UID만 업데이트
+    if grep -q "^AIRFLOW_UID=" .env; then
+        sed -i "s/^AIRFLOW_UID=.*/AIRFLOW_UID=$(id -u)/" .env
+    else
+        echo "AIRFLOW_UID=$(id -u)" >> .env
+    fi
+else
+    # .env 파일이 없으면 새로 생성
+    echo "AIRFLOW_UID=$(id -u)" > .env
+fi
 
 # 예제 DAG 비활성화
 echo "🚫 예제 DAG 비활성화 중..."
