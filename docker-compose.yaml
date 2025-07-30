@@ -51,6 +51,8 @@ x-airflow-common:
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.9.1}
   # build: .
+  env_file:
+    - ./.env
   environment:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
@@ -70,29 +72,19 @@ x-airflow-common:
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
     # Custom Application Environment Variables
-    # ===================================================================================
-    # Airflow Connections and Variables via Environment Variables
-    # .env 파일의 값을 참조하여 Airflow Connection과 Variable을 자동으로 생성합니다.
-    # ===================================================================================
-    # 1. ESL API Connection (ID: esl_api_conn)
-    # Python 코드의 BaseHook.get_connection('esl_api_conn')가 이 설정을 사용합니다.
-    AIRFLOW_CONN_ESL_API_CONN: 'http://${USERNAME}:${PASSWORD}@asia.common.solumesl.com'
-
-    # 2. Postgres DB Connection (ID: postgres_esl_db)
-    # Python 코드의 PostgresHook(postgres_conn_id='postgres_esl_db')가 이 설정을 사용합니다.
-    AIRFLOW_CONN_POSTGRES_ESL_DB: 'postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}'
-
-    # 3. Application Configuration Variable (Key: esl_config)
-    # Python 코드의 Variable.get("esl_config", deserialize_json=True)가 이 설정을 사용합니다.
-    AIRFLOW_VAR_ESL_CONFIG: >
-      {
-        "COMPANY_CODE": "${COMPANY_CODE}",
-        "STORE_CODE": "${STORE_CODE}",
-        "DB_TABLE": "${DB_TABLE}",
-        "REQUEST_TIMEOUT": ${REQUEST_TIMEOUT},
-        "DATA_FETCH_MINUTES": ${DATA_FETCH_MINUTES}
-      }
-    
+    TOKEN_URL: ${TOKEN_URL:-https://asia.common.solumesl.com/common/api/v2/token}
+    API_URL: ${API_URL:-https://asia.common.solumesl.com/common/api/v2/common/articles}
+    USERNAME: ${USERNAME}
+    PASSWORD: ${PASSWORD}
+    COMPANY_CODE: ${COMPANY_CODE:-SDM}
+    STORE_CODE: ${STORE_CODE:-SDM}
+    DB_HOST: ${DB_HOST}
+    DB_PORT: ${DB_PORT:-5432}
+    DB_NAME: ${DB_NAME}
+    DB_USER: ${DB_USER}
+    DB_PASSWORD: ${DB_PASSWORD}
+    DB_TABLE: ${DB_TABLE:-esl_price_history}
+    REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-10}
     # The following line can be used to set a custom config file, stored in the local config folder
     # If you want to use it, outcomment it and replace airflow.cfg with the name of your config file
     # AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'

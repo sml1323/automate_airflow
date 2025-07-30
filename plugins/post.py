@@ -8,7 +8,8 @@ from dataclasses import dataclass
 from contextlib import contextmanager
 import os
 from dotenv import load_dotenv
-
+from datetime import datetime
+from zoneinfo import ZoneInfo # Python 3.9+ / 또는 pytz 사용
 # Load environment variables
 load_dotenv()
 
@@ -229,9 +230,16 @@ def validate_db_data(records: List[Tuple], columns: List[str]) -> bool:
     logger.info(f"데이터 검증 완료: {len(records)}개 레코드, {len(columns)}개 컬럼")
     return True
 
-def fetch_db_data() -> Tuple[List[Tuple], List[str]]:
+
+# fetch_db_data 함수가 시작과 종료 시간을 직접 받도록 시그니처 변경
+def fetch_db_data(start_time: datetime, end_time: datetime) -> Tuple[List[Tuple], List[str]]:
     """데이터베이스에서 상품 정보를 조회합니다.
+    (UTC 시간을 KST로 변환하여 조회)
     
+    Args:
+        start_time (datetime): 조회 시작 시간 (UTC, timezone-aware)
+        end_time (datetime): 조회 종료 시간 (UTC, timezone-aware)
+
     Returns:
         Tuple[List[Tuple], List[str]]: (레코드 리스트, 컬럼명 리스트)
     """
@@ -239,17 +247,28 @@ def fetch_db_data() -> Tuple[List[Tuple], List[str]]:
     columns = []
 
     logger.info("\nStep 2: 데이터베이스에서 상품 정보를 조회합니다...")
-    
+
     try:
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
-                # 현재 시간에서 설정된 분을 뺀 시간으로 동적 조회
-                now = datetime.now()
-                time_before_minutes = now - timedelta(minutes=config.DATA_FETCH_MINUTES)
-                
-                # SQL Injection 방지를 위해 매개변수화된 쿼리 사용
-                query = f"SELECT * FROM {config.DB_TABLE} WHERE last_modified_date > %s ORDER BY last_modified_date DESC;"
-                cursor.execute(query, (time_before_minutes,))
+                # --- KST 변환 로직 시작 ---
+                korea_tz = ZoneInfo("Asia/Seoul")
+
+                # DB에 맞춰 UTC 시간을 KST 시간으로 변환
+                start_time_korea = start_time.astimezone(korea_tz)
+                end_time_korea = end_time.astimezone(korea_tz)
+
+                # 변환된 KST 시간으로 로그 출력
+                logger.info(f"데이터 조회 시간 범위 (KST 변환): {start_time_korea.isoformat()} ~ {end_time_korea.isoformat()}")
+                # --- KST 변환 로직 끝 ---
+
+                query = f"""
+                    SELECT * FROM {config.DB_TABLE} 
+                    WHERE last_modified_date > %s AND last_modified_date <= %s
+                    ORDER BY last_modified_date DESC;
+                """
+                # KST로 변환된 시간을 DB에 전달
+                cursor.execute(query, (start_time_korea, end_time_korea))
                 
                 records = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]

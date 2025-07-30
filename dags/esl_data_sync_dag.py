@@ -4,22 +4,29 @@ from airflow.operators.python import PythonOperator
 
 
 from post import get_access_token, fetch_db_data, create_api_payload, send_data_to_api
+from datetime import datetime, timedelta
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from post import get_access_token, fetch_db_data, create_api_payload, send_data_to_api
 
-def sync_esl_data():
+def sync_esl_data(**kwargs):
     """
     ESL 데이터 동기화 작업을 수행하는 함수
     post.py의 메인 로직을 Airflow 태스크로 실행
     """
     print("ESL 데이터 동기화 작업을 시작합니다...")
+
+    # Airflow의 컨텍스트에서 정확한 시작과 종료 시간을 가져옴
+    start_time = kwargs['data_interval_start']
+    end_time = kwargs['data_interval_end']
     
     # Step 1: API 토큰 발급
     access_token = get_access_token()
-    
     if not access_token:
         raise Exception("API 토큰 발급에 실패했습니다.")
     
-    # Step 2: 데이터베이스에서 데이터 조회 (동적 타임스탬프 적용)
-    db_records, db_columns = fetch_db_data()
+    # Step 2: 데이터베이스에서 데이터 조회 (정확한 시간 범위 전달)
+    db_records, db_columns = fetch_db_data(start_time=start_time, end_time=end_time)
     
     if not db_records:
         print("조회된 데이터가 없습니다. 작업을 종료합니다.")
@@ -27,7 +34,6 @@ def sync_esl_data():
     
     # Step 3: API 페이로드 생성
     payload_to_send = create_api_payload(db_records, db_columns)
-    
     if not payload_to_send:
         print("페이로드 생성에 실패했습니다. 작업을 종료합니다.")
         return
