@@ -242,5 +242,79 @@ with DAG(
 
 
 
+##### 사용 예
+
+1. plugin/hook 작성
+```python
+from airflow.plugins_manager import AirflowPlugin
+from airflow.hooks.base import BaseHook
+import requests
+
+class CustomApiHook(BaseHook):
+    def __init__(self, conn_id="custom_api_default"):
+        super().__init__()
+        self.conn_id = conn_id
+        self.session = None
+
+    def get_conn(self):
+        if not self.session:
+            conn = self.get_connection(self.conn_id)
+            self.session = requests.Session()
+            self.session.auth = (conn.login, conn.password)
+            self.base_url = conn.host
+        return self.session
+
+    def fetch_data(self, endpoint):
+        session = self.get_conn()
+        response = session.get(f"{self.base_url}/{endpoint}")
+        response.raise_for_status()
+        return response.json()
+
+    def post_data(self, endpoint, data):
+        session = self.get_conn()
+        response = session.post(f"{self.base_url}/{endpoint}", json=data)
+        response.raise_for_status()
+        return response.json()
+
+class CustomApiHookPlugin(AirflowPlugin):
+    name = "custom_api_hook_plugin"
+    hooks = [CustomApiHook]
+```
+
+2. dags/dag 작성
+```python
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime
+from custom_api_hook import CustomApiHook
+
+def fetch_api_data():
+    hook = CustomApiHook(conn_id="custom_api_default")
+    data = hook.fetch_data("data")
+    print(f"Fetched Data: {data}")
+
+def post_api_data():
+    hook = CustomApiHook(conn_id="custom_api_default")
+    payload = {"key": "value"}
+    response = hook.post_data("submit", payload)
+    print(f"Posted Data Response: {response}")
+
+with DAG(
+    dag_id="custom_hook_test_dag",
+    start_date=datetime(2025, 4, 1),
+    schedule_interval="@daily",
+    catchup=False,
+) as dag:
+    fetch_task = PythonOperator(
+        task_id="fetch_task",
+        python_callable=fetch_api_data,
+    )
+    post_task = PythonOperator(
+        task_id="post_task",
+        python_callable=post_api_data,
+    )
+    fetch_task >> post_task
+```
+
 
 
