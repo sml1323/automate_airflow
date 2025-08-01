@@ -12,7 +12,6 @@ class DataSyncBaseHook(BaseHook, ABC):
         self.connection = self.get_connection(conn_id)
         
 
-
     @abstractmethod
     def test_connection(self) -> bool:
         """연결 테스트 - 각 Hook 에서 구현"""
@@ -25,5 +24,5 @@ class DataSyncBaseHook(BaseHook, ABC):
 
     @abstractmethod
     def load_data(self, data: List[Dict[str, Any]], config: Dict[str, Any]) -> Dict[str, Any]:
-        """데이터 적재 - 각 Hook에서 구현(선택적)"""
+        """데이터 적재 - 각 Hook에서 구현"""
         pass

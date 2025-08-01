@@ -185,7 +185,62 @@ with DAG(
 
 4. Operator Integration: Using Hooks in Tasks
 
-커스텀 훅은 작업을 실행하기 위해 연산자에 통합되어 외부 상호작용을 위한 재사용 가능한 연결 layer를 제공한다.
+커스텀 훅은 작업을 실행하기 위해 Operator에 통합되어 외부 상호작용을 위한 재사용 가능한 연결 layer를 제공한다.
 
-- Key Functionality: 
+- Key Functionality: customDbHook.get_conn(): operator 의 execute 메서드 내에서 Hook을 호출하여, Operator는 query 실행과 같은 실제 작업에만 집중 가능
+
+- params: operator-specific e.g. BaseOperator
+    - `task_id`(str): Task identifier e.g. `db_task`
+
+```python
+# ~/airflow/plugins/db_operator_plugin.py
+from airflow.plugins_manager import AirflowPlugin
+from airflow.operators import BaseOperator
+from custom_db_hook_plugin import CustomDbHook
+
+class CustomDbOperator(BaseOperator):
+    def __init__(self, conn_id="custom_db_default", sql="", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.conn_id = conn_id
+        self.sql = sql
+
+    def execute(self, context):
+        hook = CustomDbHook(conn_id=self.conn_id)
+        result = hook.query(self.sql)
+        print(f"Operator Result: {result}")
+        return result
+
+class CustomDbOperatorPlugin(AirflowPlugin):
+    name = "custom_db_operator_plugin"
+    operators = [CustomDbOperator]
+```
+
+```python
+from airflow import DAG
+from datetime import datetime
+from db_operator_plugin import CustomDbOperator
+
+with DAG(
+    dag_id="db_operator_example",
+    start_date=datetime(2025, 4, 1),
+    schedule_interval="@daily",
+    catchup=False,
+) as dag:
+    task = CustomDbOperator(
+        task_id="db_operator_task",
+        conn_id="custom_db_default",
+        sql="SELECT * FROM users",
+    )
+```
+
+
+#### Key Params for Custom Hooks in Airflow
+- `conn_id`: 고유한 Connection ID. 에어플로우 커넥션과 연결
+- `plugins_folder`: 플러그인 디렉토리
+- `name`: 플러그인 이름
+- `hooks`: hook 리스트
+
+
+
+
 
