@@ -9,8 +9,11 @@ class DataSyncBaseHook(BaseHook, ABC):
     def __init__(self, conn_id: str, **kwargs):
         super().__init__()
         self.conn_id = conn_id
-        self.connection = self.get_connection(conn_id)
-        
+
+    @abstractmethod
+    def get_conn(self):
+        """실제 데이터베이스 연결 객체 반환 - 각 Hook에서 구현"""
+        pass
 
     @abstractmethod
     def test_connection(self) -> bool:
