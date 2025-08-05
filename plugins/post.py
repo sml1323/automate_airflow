@@ -420,20 +420,19 @@ def main() -> None:
             logger.error("설정 검증 실패. .env 파일을 확인하세요.")
             return
         
-        # Step 1: API 토큰 발급
-        access_token = get_access_token()
-        
-        if not access_token:
-            logger.error("토큰 발급 실패로 프로세스를 종료합니다.")
-            return
-        
-        # Step 2: 데이터베이스에서 데이터 조회
+        # Step 1: 데이터베이스에서 데이터 조회
         db_records, db_columns = fetch_db_data()
         
         if not db_records:
             logger.info("조회된 데이터가 없어 프로세스를 종료합니다.")
             return
         
+        # Step 2: API 토큰 발급
+        access_token = get_access_token()
+        
+        if not access_token:
+            logger.error("토큰 발급 실패로 프로세스를 종료합니다.")
+            return
         # Step 3: API 페이로드 생성
         payload_to_send = create_api_payload(db_records, db_columns)
         

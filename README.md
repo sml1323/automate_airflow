@@ -23,3 +23,9 @@ volumes:
 sudo chown -R ubuntu:ubuntu folder
 
 ```
+
+#### 오류로 인한 서비스 재시작
+
+```sh
+docker compose down --volumes --remove-orphansdocker-compose.yaml
+```

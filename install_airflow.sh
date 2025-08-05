@@ -7,7 +7,7 @@ echo "🚀 Airflow 설치를 시작합니다..."
 
 # docker-compose.yaml 파일 다운로드
 echo "📥 docker-compose.yaml 다운로드 중..."
-curl -LfO 'https://airflow.apache.org/docs/apache-airflow/2.9.1/docker-compose.yaml'
+curl -LfO 'https://airflow.apache.org/docs/apache-airflow/3.0.3/docker-compose.yaml'
 
 # 필요한 디렉토리 생성
 echo "📁 디렉토리 생성 중..."

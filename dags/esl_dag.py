@@ -1,7 +1,10 @@
-from airflow import DAG
+from airflow.sdk import DAG
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from datetime import datetime, timedelta
 from airflow.providers.standard.operators.python import PythonOperator,BranchPythonOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.providers.standard.operators.empty import EmptyOperator
+
 
 with DAG(
     'syncData',
@@ -33,7 +36,7 @@ with DAG(
     )
         # Step 3: API 호출 (필요시에만 실제 데이터 조회)
     def call_api_with_data(**context):
-        from airflow.providers.postgres.hooks.postgres import PostgresHook
+        
         
         # 실제 데이터 조회 (이때만 Hook 사용)
         hook = PostgresHook(postgres_conn_id="postgres_default")
