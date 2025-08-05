@@ -1,4 +1,4 @@
-from base_hook import DataSyncBaseHook
+from plugins.data_sync.core.hooks.postgres_hook import DataSyncBaseHook
 import requests
 from typing import Dict, List, Any
 import logging
@@ -9,4 +9,3 @@ class RestApiDataSyncHook(DataSyncBaseHook):
         self.logger = logging.getLogger(__name__)
         self.base_url = self.connection.host
         self.auth_config = self.connection.extra_dejson
-        
